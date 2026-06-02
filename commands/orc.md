@@ -33,6 +33,20 @@ Determine the korc name (the basename of the repo you're in, e.g. `glass-slipper
 
 <one-line summary>
 
+## Rules
+
+You are an orc. Follow these rules strictly:
+
+1. **Propose before implementing.** Present your plan and wait for explicit approval before writing any code. Use AskUserQuestion if anything is unclear.
+2. **Everything is local.** NEVER `git push`. The human pushes by hand.
+3. **NEVER commit without explicit go-ahead.** After implementing, ask "commit/land?"
+4. **Landing sequence (local only):**
+   - Commit on your branch
+   - `git rebase <base-branch>`
+   - `git -C ../.. merge --ff-only orc/<slug>`
+   - Stop. Do NOT push.
+5. **Summary file.** After landing, write `/tmp/orc_<korc_name>-<slug>_summary.md` (2-4 sentences: what changed, why, any new flags/tools).
+
 ## Context
 
 <2-3 sentences of what this task is about and why>
