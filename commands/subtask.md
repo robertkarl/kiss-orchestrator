@@ -1,4 +1,4 @@
-You are spawning or continuing a subtask from your current session. Your job is to either construct a prompt and spawn a new subtask instance, or write a continuation blurb for an existing one.
+You are spawning a subtask from your current session. Your job is to construct a prompt and spawn a new subtask instance.
 
 ## Task Request
 
@@ -6,20 +6,7 @@ $ARGUMENTS
 
 ## Procedure
 
-### 1. Classify the request
-
-Determine whether this is:
-
-- **New subtask**: User says "new subtask", "spawn a subtask for...", or there's no existing subtask that fits the work.
-- **Continuation**: User says "send this to the X subtask", "tell the [name] subtask to also...", or references a recently-used subtask by name or topic.
-
-If ambiguous, ask.
-
----
-
-## New Subtask Flow
-
-### 2. Understand the task
+### 1. Understand the task
 
 Parse what the user wants. Identify:
 - What needs to be built or modified
@@ -27,13 +14,13 @@ Parse what the user wants. Identify:
 - Whether this is a new script, a modification, or analysis work
 - Any session-specific details to pass along (current values, file paths, measurements, error messages)
 
-### 3. List session-known context files
+### 2. List session-known context files
 
 Include only files you've **already referenced in this session**, or that the user explicitly mentioned. The subtask reads project CLAUDE.md automatically and can discover the rest of its context via grep/glob — don't compile a speculative menu.
 
 **Do NOT read files just to write the prompt.** Only read a file if YOU need information from it that isn't already in your session context.
 
-### 4. Construct the prompt
+### 3. Construct the prompt
 
 Write a prompt file to `/tmp/subtask_<descriptive_slug>.prompt.md`. Structure:
 
@@ -61,7 +48,7 @@ Include session-specific values when relevant (file paths, measurements, error m
 
 **NEVER include "commit", "push", or sync instructions in the prompt.** The subtask's default behavior is to propose a plan and wait for approval. Don't override that — the user reviews before anything is committed.
 
-### 5. Spawn
+### 4. Spawn
 
 ```bash
 subtask-launch <slug> -f /tmp/subtask_<slug>.prompt.md
@@ -73,50 +60,7 @@ If the task targets a different repo than the one you're currently in, add `--re
 
 Tell the user: the subtask is running in a new terminal. It will propose its plan before writing any code, and write a summary to `/tmp/<name>_summary.md` when done.
 
-### 6. After spawning
+### 5. After spawning
 
 - When the user says the subtask is done (or you read its summary), review the output
 - Subtasks land their own code (rebase + ff-merge into master, push, plus any project-specific sync) — you don't need to sync
-
----
-
-## Continuation Flow
-
-For sending a follow-up task to an already-running subtask.
-
-### 2c. Pick a slug for the continuation
-
-Choose a short descriptive slug for this follow-up task (e.g. `fix_threshold`, `add_settle_param`). This determines the new summary file name: `/tmp/subtask_<slug>_summary.md`.
-
-### 3c. Write the continuation blurb
-
-Write a blurb that the user will paste into the existing subtask's terminal.
-
-**Do NOT read source files to write the blurb.** You already have session context. The subtask has the code open. Only include problem description and session-specific values (measurements, file paths, error messages).
-
-Format:
-
-```
-# Operator Task
-
-Summary file: `/tmp/subtask_<slug>_summary.md`
-
-<problem description — what's wrong or what's needed, with any relevant values/context from the current session>
-
-Before proceeding, recite your subtask_agent Rules.
-```
-
-Rules for the blurb:
-- **Problem description only** — don't propose solutions. The subtask agent will figure out the approach.
-- Include session-specific values (file paths, error messages, etc.) that the subtask needs.
-- Keep it concise — 1-2 paragraphs max.
-
-### 4c. Present to the user
-
-Show the blurb and tell the user which subtask terminal to paste it in. Example:
-
-> Paste this into the [name] subtask terminal:
-
-### 5c. Log it (if applicable)
-
-If the parent session is keeping a notebook/log, append a one-liner: what continuation was sent, to which subtask.

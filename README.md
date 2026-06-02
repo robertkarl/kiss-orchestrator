@@ -10,9 +10,7 @@ summary file the primary session reads back.
 ## Pieces
 
 - `commands/subtask.md` — a slash command (`/subtask`) for the **primary**
-  session. It classifies the request (new subtask vs. continuation), writes a
-  prompt file, and spawns the subtask via `subtask-launch`. Also produces
-  "continuation blurbs" to paste into an already-running subtask.
+  session. Writes a prompt file and spawns the subtask via `subtask-launch`.
 - `agents/subtask_agent.md` — the **subtask agent** definition: its rules
   (propose-before-implementing, the local-only landing sequence, never push),
   project-convention deference, persistent agent-memory, and tool hygiene.

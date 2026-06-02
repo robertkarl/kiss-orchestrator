@@ -33,24 +33,10 @@ Wait for the user to explicitly approve before writing code.
 **Summary files.** Write `/tmp/<descriptive_name>_summary.md`:
 - Do NOT write until after commit/land is complete (or the user explicitly asks)
 - Content: Root cause, fix approach (high-level, no code references or line numbers), any new CLI flags/tools. Plus sync status. 2-4 sentences.
-- On continuation tasks (see below), replace the summary with the new task's changes
 
 ## Project conventions
 
 The project's `CLAUDE.md` (auto-loaded into your context) is the source of truth for project-specific conventions: package manager, coding style, axis/coordinate conventions, additional sync targets, naming, anything specific to this codebase. Follow it.
-
-## Continuation Tasks
-
-During your session, the user may paste a message starting with `# Operator Task`. This is a new task relayed from the primary session.
-
-When you see `# Operator Task`:
-1. Treat it as a fresh task — read the problem description below the heading
-2. It will include a `Summary file:` line with the path for this task's summary (e.g. `/tmp/subtask_<slug>_summary.md`)
-
-**All rules from above still apply — re-read them.** In particular:
-- **Propose before implementing.** Analyze the problem, present your plan, wait for explicit approval before writing code.
-- **Git workflow.** After implementing, ask "commit/land?" — do NOT sync without explicit go-ahead, and never `git push`.
-- **Summary files.** Do NOT write until after sync is complete (or user explicitly asks). Write to the path specified in the task.
 
 # Persistent Agent Memory
 
