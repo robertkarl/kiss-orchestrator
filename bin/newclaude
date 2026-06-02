@@ -1,0 +1,106 @@
+#!/bin/bash
+# Launch a new terminal running Claude Code.
+# - Linux:   Alacritty
+# - macOS:   Ghostty (via `open -na`, since LaunchServices is the only reliable launcher)
+# - Windows: Alacritty (Git Bash / MSYS)
+#
+# Usage: newclaude [--fork] [--agent NAME] [-f <file>] [--env KEY=VAL]... [directory] [prompt]
+#
+# Flags can appear in any order, before or after the directory.
+#
+# --fork: resume the current session ($CLAUDE_CODE_SESSION_ID) with --fork-session,
+#         so the new terminal opens a forked copy (new session id, same history).
+
+claude_args=()
+prompt=""
+dir=""
+envs=()
+fork=0
+
+# Parse flags
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --agent)
+            claude_args+=(--agent "$2")
+            shift 2
+            ;;
+        -f)
+            prompt="$(cat "$2")"
+            shift 2
+            ;;
+        --env)
+            envs+=("$2")
+            shift 2
+            ;;
+        --fork)
+            if [[ -z "$CLAUDE_CODE_SESSION_ID" ]]; then
+                echo "newclaude --fork: CLAUDE_CODE_SESSION_ID not set (run from inside a Claude session)" >&2
+                exit 1
+            fi
+            claude_args+=(--resume "$CLAUDE_CODE_SESSION_ID" --fork-session)
+            fork=1
+            shift
+            ;;
+        *)
+            if [[ -z "$dir" ]]; then
+                dir="$1"
+            elif [[ -z "$prompt" ]]; then
+                prompt="$1"
+            fi
+            shift
+            ;;
+    esac
+done
+
+# A forked session lives under the project dir for the cwd Claude was LAUNCHED
+# in, and `claude --resume` only finds it from that same dir. Claude may have
+# cd'd elsewhere mid-session, so $PWD is unreliable — recover the launch cwd
+# from the first record of the session transcript. (Decoding the project-dir
+# name doesn't work: the path->dir encoding collapses '/', '.', '_' all to '-'.)
+if [[ $fork -eq 1 && -z "$dir" ]]; then
+    sf=( "$HOME"/.claude/projects/*/"$CLAUDE_CODE_SESSION_ID".jsonl )
+    sf="${sf[0]}"
+    if [[ -f "$sf" ]]; then
+        dir="$(grep -m1 -o '"cwd":"[^"]*"' "$sf" | head -1 | sed 's/.*"cwd":"//; s/"$//')"
+    fi
+fi
+
+# Fallbacks: a fork whose transcript we couldn't read still beats nothing with
+# $PWD; a plain (non-fork) launch defaults to $HOME as before.
+if [[ -z "$dir" ]]; then
+    if [[ $fork -eq 1 ]]; then dir="$PWD"; else dir="$HOME"; fi
+fi
+
+if [[ -n "$prompt" ]]; then
+    claude_args+=("$prompt")
+fi
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS: Ghostty's --working-directory isn't honored when launched via
+    # `open -na --args`, so we cd inside a bash -c wrapper. Env vars also
+    # don't cross the `open -na` boundary, so they're baked into the cmd string.
+    cmd="cd $(printf '%q' "$dir") && exec env -u CLAUDECODE"
+    for kv in "${envs[@]}"; do
+        cmd+=" $(printf '%q' "$kv")"
+    done
+    cmd+=" claude"
+    for arg in "${claude_args[@]}"; do
+        cmd+=" $(printf '%q' "$arg")"
+    done
+    open -na Ghostty.app --args -e bash -c "$cmd"
+elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+    # Windows (Git Bash). alacritty.exe self-detaches from the parent shell.
+    # --working-directory needs a Windows path → cygpath -w. Don't use a
+    # `bash -c` wrapper: `bash` on PATH may resolve to the WSL stub which
+    # hangs CreateProcess. env.exe and claude.exe are native binaries
+    # (MSYS coreutils + Claude Code PE32) that alacritty launches directly.
+    alacritty --working-directory "$(cygpath -w "$dir")" -e env -u CLAUDECODE "${envs[@]}" claude "${claude_args[@]}" &
+else
+    # Linux: alacritty's -e passes argv through to the child, so
+    # `env -u CLAUDECODE KEY=VAL claude ARGS` works directly.
+    # setsid -f + stdio redirect: alacritty is one-process-per-window
+    # and inherits the script's stdio, so a bare `&` blocks any caller
+    # (e.g. Claude Code's Bash tool) reading those pipes until the
+    # window closes. Detaching severs the FDs.
+    setsid -f alacritty --working-directory "$dir" -e env -u CLAUDECODE "${envs[@]}" claude "${claude_args[@]}" </dev/null >/dev/null 2>&1
+fi
