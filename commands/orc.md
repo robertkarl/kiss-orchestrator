@@ -52,13 +52,18 @@ Include session-specific values when relevant (file paths, measurements, error m
 
 **NEVER include "commit", "push", or sync instructions in the prompt.** The orc's default behavior is to propose a plan and wait for approval. Don't override that — the user reviews before anything is committed.
 
-### 4. Create the worktree
+### 4. Create worktree and launch orc
 
-Run the following bash commands to set up the orc's isolated workspace:
+Substitute `SLUG` and `PROMPT_FILE` into the following script and run it as a single bash command. Do not split it up or modify the logic.
+
+**Avoid nested worktrees.** If your CWD contains `.worktrees/`, you are inside an orc worktree. In that case, change `REPO_DIR` to the main repo root (two levels up) so the new orc is a sibling, not nested.
 
 ```bash
-REPO_DIR="$(git rev-parse --show-toplevel)"
+set -euo pipefail
 SLUG="<slug>"
+PROMPT_FILE="/tmp/orc_<korc_name>-<slug>.prompt.md"
+
+REPO_DIR="$(git rev-parse --show-toplevel)"
 WORKTREE="${REPO_DIR}/.worktrees/${SLUG}"
 BRANCH="orc/${SLUG}"
 
@@ -73,46 +78,27 @@ if git show-ref --verify --quiet "refs/heads/${BRANCH}"; then
     git branch -D "${BRANCH}" 2>/dev/null || true
 fi
 
-# Create worktree on new branch from HEAD
+# Create worktree
 mkdir -p "${REPO_DIR}/.worktrees"
 git worktree add "${WORKTREE}" -b "${BRANCH}" HEAD
-```
 
-**Avoid nested worktrees — orcs spawned by orcs should be siblings.** If you're already inside an orc worktree (path contains `.worktrees/`), set `REPO_DIR` to the *main* repo root (two levels up from the worktree root) so the new orc lands as a sibling.
+# Build the command to run in the new terminal
+PROMPT="$(cat "${PROMPT_FILE}")"
+CMD="cd $(printf '%q' "${WORKTREE}") && env CLAUDE_CODE_ENABLE_TASKS=false claude --agent orc_agent $(printf '%q' "${PROMPT}")"
 
-### 5. Launch the orc
-
-Read the prompt file content, then open a new terminal with Claude running the orc_agent:
-
-```bash
-PROMPT="$(cat /tmp/orc_<korc_name>-<slug>.prompt.md)"
-
-# Build the claude command
-CMD="cd ${WORKTREE} && env CLAUDE_CODE_ENABLE_TASKS=false claude --agent orc_agent"
-```
-
-Append the prompt to the command: add `"${PROMPT}"` as the final argument to `claude`.
-
-**macOS (iTerm2):**
-```bash
-# Escape for AppleScript
+# Escape for AppleScript and launch in iTerm2
 AS_CMD="${CMD//\\/\\\\}"
 AS_CMD="${AS_CMD//\"/\\\"}"
 osascript \
     -e 'tell application "iTerm2" to create window with default profile' \
     -e "tell application \"iTerm2\" to tell current session of current window to write text \"${AS_CMD}\""
-```
 
-**Linux (Alacritty):**
-```bash
-setsid -f alacritty --working-directory "${WORKTREE}" \
-    -e env CLAUDE_CODE_ENABLE_TASKS=false claude --agent orc_agent "${PROMPT}" \
-    </dev/null >/dev/null 2>&1
+echo "Orc '${SLUG}' launched in new iTerm2 window (branch: ${BRANCH})"
 ```
 
 Tell the user: the orc is running in a new terminal. It will propose its plan before writing any code, and write a summary to `/tmp/orc_<korc_name>-<slug>_summary.md` when done.
 
-### 6. After spawning
+### 5. After spawning
 
 - When the user says the orc is done (or you read its summary), review the output
 - Orcs land their own code (rebase + ff-merge into master, plus any project-specific sync) — you don't need to sync
