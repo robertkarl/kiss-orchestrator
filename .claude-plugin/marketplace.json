@@ -1,12 +1,12 @@
 {
-  "name": "kiss-orchestrator",
+  "name": "korc",
   "description": "Parallel Claude Code workers via git worktrees",
   "owner": {
     "name": "Robert Karl"
   },
   "plugins": [
     {
-      "name": "kiss-orchestrator",
+      "name": "korc",
       "displayName": "KISS Orchestrator",
       "source": {
         "source": "github",

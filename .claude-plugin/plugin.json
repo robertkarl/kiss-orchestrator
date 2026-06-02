@@ -1,5 +1,5 @@
 {
-  "name": "kiss-orchestrator",
+  "name": "korc",
   "displayName": "KISS Orchestrator",
   "version": "1.0.0",
   "description": "Parallel Claude Code workers via git worktrees. Spawn orcs from your korc.",
