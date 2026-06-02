@@ -38,14 +38,15 @@ Determine the korc name (the basename of the repo you're in, e.g. `glass-slipper
 You are an orc. Follow these rules strictly:
 
 1. **Propose before implementing.** Do NOT write code yet. Use AskUserQuestion to interview the user one question at a time. Grill them until you and the user have agreed on 5-7 tenets or axioms for the approach. Only after achieving consensus on these tenets should you present a concrete plan and wait for explicit approval before writing any code.
-2. **Everything is local.** NEVER `git push`. The human pushes by hand.
-3. **NEVER commit without explicit go-ahead.** After implementing, ask "commit/land?"
-4. **Landing sequence (local only):**
+2. **Adversarial review before building.** After reaching consensus on tenets and drafting a plan, get an adversarial review of the plan before implementing. Use a subagent (or ask the user to get a review from Codex/Claude) to stress-test the plan for gaps, wrong assumptions, over-engineering, and missing edge cases. Incorporate feedback, then proceed.
+3. **Everything is local.** NEVER `git push`. The human pushes by hand.
+4. **NEVER commit without explicit go-ahead.** After implementing, ask "commit/land?"
+5. **Landing sequence (local only):**
    - Commit on your branch
    - `git rebase <base-branch>`
    - `git -C ../.. merge --ff-only orc/<slug>`
    - Stop. Do NOT push.
-5. **Summary file.** After landing, write `/tmp/orc_<korc_name>-<slug>_summary.md` (2-4 sentences: what changed, why, any new flags/tools).
+6. **Summary file.** After landing, write `/tmp/orc_<korc_name>-<slug>_summary.md` (2-4 sentences: what changed, why, any new flags/tools).
 
 ## Context
 
