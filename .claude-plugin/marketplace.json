@@ -1,0 +1,28 @@
+{
+  "name": "kiss-orchestrator",
+  "description": "Parallel Claude Code workers via git worktrees",
+  "owner": {
+    "name": "Robert Karl"
+  },
+  "plugins": [
+    {
+      "name": "kiss-orchestrator",
+      "displayName": "KISS Orchestrator",
+      "source": {
+        "source": "github",
+        "repo": "robertkarl/kiss-orchestrator"
+      },
+      "description": "Spawn orcs (parallel Claude workers) from your korc via git worktrees.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Robert Karl"
+      },
+      "homepage": "https://github.com/robertkarl/kiss-orchestrator",
+      "repository": "https://github.com/robertkarl/kiss-orchestrator",
+      "license": "MIT",
+      "keywords": ["orchestration", "worktree", "parallel"],
+      "category": "productivity",
+      "defaultEnabled": true
+    }
+  ]
+}

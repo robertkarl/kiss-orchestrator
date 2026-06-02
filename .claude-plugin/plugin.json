@@ -1,0 +1,17 @@
+{
+  "name": "kiss-orchestrator",
+  "displayName": "KISS Orchestrator",
+  "version": "1.0.0",
+  "description": "Parallel Claude Code workers via git worktrees. Spawn orcs from your korc.",
+  "author": {
+    "name": "Robert Karl",
+    "url": "https://github.com/robertkarl"
+  },
+  "homepage": "https://github.com/robertkarl/kiss-orchestrator",
+  "repository": "https://github.com/robertkarl/kiss-orchestrator",
+  "license": "MIT",
+  "keywords": ["orchestration", "worktree", "parallel", "agents"],
+  "defaultEnabled": true,
+  "commands": "./commands/",
+  "agents": "./agents/"
+}

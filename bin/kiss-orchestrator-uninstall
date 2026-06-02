@@ -1,0 +1,22 @@
+#!/bin/bash
+# Uninstall kiss-orchestrator (orc workflow for Claude Code).
+set -euo pipefail
+
+files=(
+    "$HOME/.local/bin/orc-launch"
+    "$HOME/.local/bin/newclaude"
+    "$HOME/.local/bin/kiss-orchestrator-uninstall"
+    "$HOME/.claude/commands/orc.md"
+    "$HOME/.claude/agents/orc_agent.md"
+)
+
+echo "Removing kiss-orchestrator files:"
+for f in "${files[@]}"; do
+    if [[ -f "$f" ]]; then
+        rm "$f"
+        echo "  removed $f"
+    else
+        echo "  skipped $f (not found)"
+    fi
+done
+echo "Done."
