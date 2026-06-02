@@ -1,4 +1,8 @@
-You are the korc (kiss-orchestrator) spawning an orc from your current session. Your job is to construct a prompt and spawn a new orc instance.
+---
+description: Spawn an orc (parallel Claude worker) in its own git worktree and terminal
+---
+
+You are the korc (kiss-orchestrator) spawning an orc from your current session. Your job is to construct a prompt, set up a git worktree, and launch a new Claude instance in a new terminal window.
 
 ## Task Request
 
@@ -22,7 +26,7 @@ Include only files you've **already referenced in this session**, or that the us
 
 ### 3. Construct the prompt
 
-Determine the korc name (the basename of the repo you're in, e.g. `glass-slipper`). Write a prompt file to `/tmp/orc_<korc_name>-<descriptive_slug>.prompt.md`. Structure:
+Determine the korc name (the basename of the repo you're in, e.g. `glass-slipper`). Choose a short descriptive slug for the task (e.g. `fix_auth`, `add_logging`). Write a prompt file to `/tmp/orc_<korc_name>-<slug>.prompt.md`. Structure:
 
 ```
 # Operator Task
@@ -48,19 +52,67 @@ Include session-specific values when relevant (file paths, measurements, error m
 
 **NEVER include "commit", "push", or sync instructions in the prompt.** The orc's default behavior is to propose a plan and wait for approval. Don't override that — the user reviews before anything is committed.
 
-### 4. Spawn
+### 4. Create the worktree
+
+Run the following bash commands to set up the orc's isolated workspace:
 
 ```bash
-orc-launch <slug> -f /tmp/orc_<korc_name>-<slug>.prompt.md
+REPO_DIR="$(git rev-parse --show-toplevel)"
+SLUG="<slug>"
+WORKTREE="${REPO_DIR}/.worktrees/${SLUG}"
+BRANCH="orc/${SLUG}"
+
+# Prune stale worktrees
+git worktree prune 2>/dev/null
+
+# Clean up if this slug was used before
+if git worktree list --porcelain | grep -q "worktree ${WORKTREE}$"; then
+    git worktree remove --force "${WORKTREE}" 2>/dev/null || true
+fi
+if git show-ref --verify --quiet "refs/heads/${BRANCH}"; then
+    git branch -D "${BRANCH}" 2>/dev/null || true
+fi
+
+# Create worktree on new branch from HEAD
+mkdir -p "${REPO_DIR}/.worktrees"
+git worktree add "${WORKTREE}" -b "${BRANCH}" HEAD
 ```
 
-If the task targets a different repo than the one you're currently in, add `--repo <path>`.
+**Avoid nested worktrees — orcs spawned by orcs should be siblings.** If you're already inside an orc worktree (path contains `.worktrees/`), set `REPO_DIR` to the *main* repo root (two levels up from the worktree root) so the new orc lands as a sibling.
 
-**Avoid nested worktrees — orcs spawned by orcs should be siblings.** `orc-launch` defaults `--repo` to the git toplevel of your CWD. If you're already inside an orc worktree (path ends in `.worktrees/<name>`), that default would create `<main_repo>/.worktrees/<parent>/.worktrees/<child>` — nested. Pass `--repo` pointing at the *main* repo so the new orc lands as a sibling under `<main_repo>/.worktrees/` instead. From an orc worktree root, that's `--repo ../..`.
+### 5. Launch the orc
+
+Read the prompt file content, then open a new terminal with Claude running the orc_agent:
+
+```bash
+PROMPT="$(cat /tmp/orc_<korc_name>-<slug>.prompt.md)"
+
+# Build the claude command
+CMD="cd ${WORKTREE} && env CLAUDE_CODE_ENABLE_TASKS=false claude --agent orc_agent"
+```
+
+Append the prompt to the command: add `"${PROMPT}"` as the final argument to `claude`.
+
+**macOS (iTerm2):**
+```bash
+# Escape for AppleScript
+AS_CMD="${CMD//\\/\\\\}"
+AS_CMD="${AS_CMD//\"/\\\"}"
+osascript \
+    -e 'tell application "iTerm2" to create window with default profile' \
+    -e "tell application \"iTerm2\" to tell current session of current window to write text \"${AS_CMD}\""
+```
+
+**Linux (Alacritty):**
+```bash
+setsid -f alacritty --working-directory "${WORKTREE}" \
+    -e env CLAUDE_CODE_ENABLE_TASKS=false claude --agent orc_agent "${PROMPT}" \
+    </dev/null >/dev/null 2>&1
+```
 
 Tell the user: the orc is running in a new terminal. It will propose its plan before writing any code, and write a summary to `/tmp/orc_<korc_name>-<slug>_summary.md` when done.
 
-### 5. After spawning
+### 6. After spawning
 
 - When the user says the orc is done (or you read its summary), review the output
 - Orcs land their own code (rebase + ff-merge into master, plus any project-specific sync) — you don't need to sync

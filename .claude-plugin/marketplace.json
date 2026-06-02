@@ -1,13 +1,11 @@
 {
-  "name": "korc",
-  "description": "Parallel Claude Code workers via git worktrees",
+  "name": "kiss",
   "owner": {
     "name": "Robert Karl"
   },
   "plugins": [
     {
       "name": "korc",
-      "displayName": "KISS Orchestrator",
       "source": {
         "source": "github",
         "repo": "robertkarl/kiss-orchestrator"
@@ -21,8 +19,7 @@
       "repository": "https://github.com/robertkarl/kiss-orchestrator",
       "license": "MIT",
       "keywords": ["orchestration", "worktree", "parallel"],
-      "category": "productivity",
-      "defaultEnabled": true
+      "category": "productivity"
     }
   ]
 }
