@@ -1,6 +1,9 @@
 # kiss-orchestrator. stupid simple subagent orchestrator for Claude
+- This was ripped off wholesale from Zack Gomez.
 
+  
 ## Terminology
+
 
 - **korc.** Your main Claude thread. Call him Gothmog if you want.
 - **orc.** An orc is just a Claude subtask + minor bookkeeping. It is 1) a new terminal window running Claude. 2) a git worktree initialized by the korc. 3) a prompt written by the korc.
