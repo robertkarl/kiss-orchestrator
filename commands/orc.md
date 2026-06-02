@@ -97,16 +97,13 @@ fi
 mkdir -p "${REPO_DIR}/.worktrees"
 git worktree add "${WORKTREE}" -b "${BRANCH}" HEAD
 
-# Build the command to run in the new terminal
-PROMPT="$(cat "${PROMPT_FILE}")"
-CMD="cd $(printf '%q' "${WORKTREE}") && env CLAUDE_CODE_ENABLE_TASKS=false claude --agent orc_agent $(printf '%q' "${PROMPT}")"
+# Launch: pass the file path, NOT the file contents.
+# Embedding multi-line markdown in a shell command causes escaping disasters.
+CMD="cd $(printf '%q' "${WORKTREE}") && env CLAUDE_CODE_ENABLE_TASKS=false claude --agent orc_agent 'Read ${PROMPT_FILE} for your task instructions.'"
 
-# Escape for AppleScript and launch in iTerm2
-AS_CMD="${CMD//\\/\\\\}"
-AS_CMD="${AS_CMD//\"/\\\"}"
 osascript \
     -e 'tell application "iTerm2" to create window with default profile' \
-    -e "tell application \"iTerm2\" to tell current session of current window to write text \"${AS_CMD}\""
+    -e "tell application \"iTerm2\" to tell current session of current window to write text \"${CMD}\""
 
 echo "Orc '${SLUG}' launched in new iTerm2 window (branch: ${BRANCH})"
 ```
